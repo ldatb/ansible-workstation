@@ -1,0 +1,14 @@
+---
+# Security hardening only
+# Usage: ansible-playbook playbooks/security.yml
+
+- name: Apply security hardening
+  hosts: workstation
+  gather_facts: true
+
+  roles:
+    - role: common
+      tags: [always]
+
+    - role: security
+      tags: [security, hardening]

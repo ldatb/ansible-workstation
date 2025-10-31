@@ -1,0 +1,12 @@
+---
+# Variables for Linux hosts (both Debian and RedHat families)
+
+# SSH hardening
+harden_ssh: true
+keep_ssh_enabled: true
+
+# Automatic security updates
+enable_automatic_security_updates: true
+
+# Auditing
+enable_auditd: false

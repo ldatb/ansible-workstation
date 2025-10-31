@@ -1,0 +1,29 @@
+---
+# Variables for workstation hosts
+
+# System update settings
+check_macos_updates: true
+update_homebrew_cleanup: true
+
+# Backup settings
+backup_directories:
+  - "{{ ansible_env.HOME }}/Documents"
+  - "{{ ansible_env.HOME }}/Desktop"
+  - "{{ ansible_env.HOME }}/.ssh"
+  - "{{ ansible_env.HOME }}/.gnupg"
+  - "{{ ansible_env.HOME }}/.config"
+
+backup_files:
+  - "{{ ansible_env.HOME }}/.bashrc"
+  - "{{ ansible_env.HOME }}/.bash_profile"
+  - "{{ ansible_env.HOME }}/.profile"
+
+backup_homebrew_bundle: true
+backup_macos_preferences: false
+
+# Security settings
+enable_firewall: true
+enable_stealth_mode: true
+harden_home_permissions: true
+require_password_after_screensaver: true
+check_filevault_status: true

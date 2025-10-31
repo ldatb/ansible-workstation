@@ -1,0 +1,14 @@
+---
+# Compliance check only
+# Usage: ansible-playbook playbooks/compliance.yml
+
+- name: Run compliance checks
+  hosts: workstation
+  gather_facts: true
+
+  roles:
+    - role: common
+      tags: [always]
+
+    - role: compliance
+      tags: [compliance, audit]

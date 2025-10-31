@@ -1,0 +1,14 @@
+---
+# System update only
+# Usage: ansible-playbook playbooks/update.yml
+
+- name: Update system packages
+  hosts: workstation
+  gather_facts: true
+
+  roles:
+    - role: common
+      tags: [always]
+
+    - role: system_update
+      tags: [update]

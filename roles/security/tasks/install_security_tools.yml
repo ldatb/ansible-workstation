@@ -1,0 +1,23 @@
+---
+# Install security tools
+
+- name: Install security tools (macOS)
+  community.general.homebrew:
+    name: "{{ macos_security_tools }}"
+    state: present
+  become: false
+  when: ansible_os_family == "Darwin"
+
+- name: Install security tools (Debian/Ubuntu)
+  ansible.builtin.apt:
+    name: "{{ debian_security_tools }}"
+    state: present
+  become: true
+  when: ansible_os_family == "Debian"
+
+- name: Install security tools (RedHat/CentOS)
+  ansible.builtin.package:
+    name: "{{ redhat_security_tools }}"
+    state: present
+  become: true
+  when: ansible_os_family == "RedHat"

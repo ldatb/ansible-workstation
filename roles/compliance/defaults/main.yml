@@ -1,0 +1,11 @@
+---
+# Default variables for compliance role
+
+compliance_report_path: "{{ ansible_env.HOME }}/compliance-reports"
+compliance_timestamp: "{{ ansible_date_time.iso8601_basic_short }}"
+
+# Report generation
+generate_compliance_report: true
+
+# Lynis audit settings
+run_lynis_audit: false

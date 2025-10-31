@@ -1,0 +1,29 @@
+---
+# Debian/Ubuntu-specific update tasks
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+
+- name: Upgrade all packages
+  ansible.builtin.apt:
+    upgrade: "{{ apt_upgrade_type }}"
+    autoremove: "{{ apt_autoremove }}"
+    autoclean: "{{ apt_autoclean }}"
+  become: true
+
+- name: Check for security updates
+  ansible.builtin.shell: |
+    apt list --upgradable 2>/dev/null | grep -i security || true
+  register: security_updates
+  changed_when: false
+  when: check_security_updates | default(true)
+
+- name: Display security updates
+  ansible.builtin.debug:
+    msg: "{{ security_updates.stdout_lines }}"
+  when:
+    - check_security_updates | default(true)
+    - security_updates.stdout | length > 0

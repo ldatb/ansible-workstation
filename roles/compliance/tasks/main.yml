@@ -1,0 +1,38 @@
+---
+# Compliance check tasks
+
+- name: Create compliance report directory
+  ansible.builtin.file:
+    path: "{{ compliance_report_path }}"
+    state: directory
+    mode: '0700'
+  become: false
+
+- name: Include OS-specific compliance checks
+  ansible.builtin.include_tasks: "{{ item }}"
+  with_first_found:
+    - files:
+        - "compliance_{{ ansible_os_family | lower }}.yml"
+      skip: true
+
+- name: Common compliance checks
+  ansible.builtin.include_tasks: compliance_common.yml
+
+- name: Generate compliance report
+  ansible.builtin.template:
+    src: compliance_report.j2
+    dest: "{{ compliance_report_path }}/compliance_{{ compliance_timestamp }}.txt"
+    mode: '0600'
+  become: false
+  when:
+    - generate_compliance_report | default(true)
+    - world_writable_files is defined
+    - disk_usage is defined
+
+- name: Run Lynis security audit
+  ansible.builtin.include_tasks: run_lynis.yml
+  when: run_lynis_audit | default(false)
+
+- name: Display report location
+  ansible.builtin.debug:
+    msg: "Compliance report generated: {{ compliance_report_path }}/compliance_{{ compliance_timestamp }}.txt"

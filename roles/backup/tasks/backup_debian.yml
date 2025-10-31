@@ -1,0 +1,23 @@
+---
+# Debian/Ubuntu-specific backup tasks
+
+- name: Export APT package selections
+  ansible.builtin.shell: dpkg --get-selections > "{{ backup_destination }}/{{ backup_timestamp }}/apt_packages.txt"
+  register: apt_backup
+  changed_when: true
+  become: true
+
+- name: Backup APT sources
+  ansible.builtin.copy:
+    src: /etc/apt/sources.list
+    dest: "{{ backup_destination }}/{{ backup_timestamp }}/apt_sources.list"
+    mode: '0600'
+  failed_when: false
+  become: true
+
+- name: Backup APT repository keys
+  ansible.builtin.shell: apt-key exportall > "{{ backup_destination }}/{{ backup_timestamp }}/apt_keys.asc"
+  register: apt_keys
+  changed_when: true
+  failed_when: false
+  become: true

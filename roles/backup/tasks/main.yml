@@ -1,0 +1,39 @@
+---
+# Backup tasks
+
+- name: Create backup destination directory
+  ansible.builtin.file:
+    path: "{{ backup_destination }}/{{ backup_timestamp }}"
+    state: directory
+    mode: '0700'
+  become: false
+
+- name: Include OS-specific backup tasks
+  ansible.builtin.include_tasks: "{{ item }}"
+  with_first_found:
+    - files:
+        - "backup_{{ ansible_os_family | lower }}.yml"
+      skip: true
+
+- name: Archive directories
+  ansible.builtin.include_tasks: archive_directories.yml
+  when: backup_directories | length > 0
+
+- name: Backup individual files
+  ansible.builtin.include_tasks: backup_files.yml
+  when: backup_files | length > 0
+
+- name: Create backup manifest
+  ansible.builtin.template:
+    src: backup_manifest.j2
+    dest: "{{ backup_destination }}/{{ backup_timestamp }}/MANIFEST.txt"
+    mode: '0600'
+  become: false
+
+- name: Create consolidated tarball
+  ansible.builtin.include_tasks: create_tarball.yml
+  when: create_backup_tarball | default(true)
+
+- name: Cleanup old backups
+  ansible.builtin.include_tasks: cleanup.yml
+  when: backup_retention_days > 0

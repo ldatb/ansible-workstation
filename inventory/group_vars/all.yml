@@ -1,0 +1,16 @@
+---
+# Variables applied to all hosts
+
+# Common settings
+common_verbose: false
+
+# Backup settings (override in host_vars or group_vars if needed)
+backup_retention_days: 30
+create_backup_tarball: true
+remove_uncompressed_backup: false
+
+# Security settings
+install_security_tools: true
+
+# Compliance settings
+run_lynis_audit: false

@@ -1,0 +1,49 @@
+---
+# macOS-specific update tasks
+
+- name: Update Homebrew
+  community.general.homebrew:
+    update_homebrew: true
+  become: false
+
+- name: Upgrade all Homebrew formulae
+  community.general.homebrew:
+    upgrade_all: true
+  become: false
+  when: update_homebrew_formulae | default(true)
+
+- name: Upgrade Homebrew casks
+  ansible.builtin.command: brew upgrade --cask --greedy
+  register: cask_upgrade
+  changed_when: "'Already up-to-date' not in cask_upgrade.stdout"
+  failed_when: false
+  become: false
+  when: update_homebrew_casks | default(true)
+
+- name: Cleanup Homebrew
+  community.general.homebrew:
+    upgrade_all: false
+  become: false
+  when: update_homebrew_cleanup | default(true)
+
+- name: Run brew cleanup
+  ansible.builtin.command: brew cleanup -s
+  register: cleanup_result
+  changed_when: cleanup_result.stdout | length > 0
+  become: false
+  when: update_homebrew_cleanup | default(true)
+
+- name: Check for macOS software updates
+  ansible.builtin.command: softwareupdate --list
+  register: macos_updates
+  changed_when: false
+  failed_when: false
+  become: false
+  when: check_macos_updates | default(false)
+
+- name: Display available macOS updates
+  ansible.builtin.debug:
+    msg: "{{ macos_updates.stdout_lines }}"
+  when:
+    - check_macos_updates | default(false)
+    - macos_updates.stdout | length > 0

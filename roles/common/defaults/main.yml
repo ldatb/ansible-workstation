@@ -1,0 +1,4 @@
+---
+# Default variables for common role
+
+common_verbose: false

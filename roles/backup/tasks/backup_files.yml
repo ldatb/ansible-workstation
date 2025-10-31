@@ -1,0 +1,30 @@
+---
+# Backup individual files
+
+- name: Check if backup files exist
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: backup_file_stats
+  loop: "{{ backup_files }}"
+  become: false
+
+- name: Create dotfiles directory in backup
+  ansible.builtin.file:
+    path: "{{ backup_destination }}/{{ backup_timestamp }}/dotfiles"
+    state: directory
+    mode: '0700'
+  become: false
+  when: backup_file_stats.results | selectattr('stat.exists') | list | length > 0
+
+- name: Copy individual files to backup
+  ansible.builtin.copy:
+    src: "{{ item.item }}"
+    dest: "{{ backup_destination }}/{{ backup_timestamp }}/dotfiles/{{ item.item | basename }}"
+    mode: preserve
+  loop: "{{ backup_file_stats.results }}"
+  when:
+    - item.stat.exists
+    - item.stat.isreg
+  loop_control:
+    label: "{{ item.item }}"
+  become: false

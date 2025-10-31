@@ -1,0 +1,23 @@
+# Ansible-lint ignore file
+# These are intentional design decisions or acceptable trade-offs
+
+# We intentionally use pipes for data processing in compliance checks
+# The benefit of readable one-liners outweighs the theoretical risk
+roles/compliance/tasks/compliance_debian.yml risky-shell-pipe
+roles/compliance/tasks/compliance_redhat.yml risky-shell-pipe
+roles/system_update/tasks/update_debian.yml risky-shell-pipe
+playbooks/weekly-os.yml risky-shell-pipe
+
+# These are legitimate uses of rpm/systemctl for information gathering
+roles/backup/tasks/backup_redhat.yml command-instead-of-module
+roles/compliance/tasks/compliance_debian.yml command-instead-of-module
+roles/compliance/tasks/compliance_redhat.yml command-instead-of-module
+
+# File permissions are intentionally set by the archive module
+roles/backup/tasks/archive_directories.yml risky-file-permissions
+
+# Using builtin archive is correct, not community.general
+roles/backup/tasks/archive_directories.yml fqcn
+
+# RedHat update tasks intentionally use yum/dnf for system updates
+roles/system_update/tasks/update_redhat.yml fqcn

@@ -1,0 +1,18 @@
+---
+# Variables specific to macOS (Darwin) hosts
+
+# macOS-specific security
+disable_remote_apple_events: true
+disable_guest_account: true
+enable_automatic_updates_check: true
+enable_automatic_updates_download: false
+
+# Security tools for macOS
+macos_security_tools:
+  - lynis
+  - clamav
+  - gnupg
+
+# Homebrew update settings
+update_homebrew_formulae: true
+update_homebrew_casks: true

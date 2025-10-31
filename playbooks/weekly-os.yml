@@ -1,0 +1,102 @@
+---
+# Weekly OS maintenance routine
+# Comprehensive maintenance: update -> compliance check -> backup -> security -> final audit
+# Usage: ansible-playbook playbooks/weekly-os.yml
+
+- name: Weekly OS maintenance routine
+  hosts: workstation
+  gather_facts: true
+
+  pre_tasks:
+    - name: Display maintenance start message
+      ansible.builtin.debug:
+        msg:
+          - "============================================="
+          - "Starting Weekly OS Maintenance Routine"
+          - "============================================="
+          - "Date: {{ ansible_date_time.date }}"
+          - "Time: {{ ansible_date_time.time }}"
+          - "Host: {{ ansible_hostname }}"
+      tags: [always]
+
+  roles:
+    - role: common
+      tags: [always]
+
+    # Step 1: Initial compliance check
+    - role: compliance
+      tags: [compliance, audit, pre-check]
+      vars:
+        compliance_report_path: "{{ ansible_env.HOME }}/compliance-reports/weekly"
+
+    # Step 2: System updates
+    - role: system_update
+      tags: [update, maintenance]
+
+    # Step 3: Backup current state
+    - role: backup
+      tags: [backup, maintenance]
+
+    # Step 4: Apply security hardening
+    - role: security
+      tags: [security, hardening]
+
+    # Step 5: Final compliance check
+    - role: compliance
+      tags: [compliance, audit, post-check]
+      vars:
+        compliance_report_path: "{{ ansible_env.HOME }}/compliance-reports/weekly-final"
+
+  post_tasks:
+    - name: Cleanup Homebrew (macOS)
+      ansible.builtin.command: brew cleanup -s
+      register: cleanup_result
+      changed_when: cleanup_result.stdout | length > 0
+      become: false
+      when: ansible_os_family == "Darwin"
+      tags: [cleanup]
+
+    - name: Remove unused packages (Debian)
+      ansible.builtin.apt:
+        autoremove: true
+        autoclean: true
+      become: true
+      when: ansible_os_family == "Debian"
+      tags: [cleanup]
+
+    - name: Remove unused packages (RedHat)
+      ansible.builtin.command: "{{ 'dnf' if ansible_distribution_major_version | int >= 8 else 'yum' }} autoremove -y"
+      register: autoremove_result
+      changed_when: "'Nothing to do' not in autoremove_result.stdout"
+      become: true
+      when: ansible_os_family == "RedHat"
+      tags: [cleanup]
+
+    - name: Check disk space after cleanup
+      ansible.builtin.shell: df -h / | tail -1
+      register: final_disk_space
+      changed_when: false
+      tags: [cleanup]
+
+    - name: Display maintenance summary
+      ansible.builtin.debug:
+        msg:
+          - "============================================="
+          - "Weekly OS Maintenance Completed"
+          - "============================================="
+          - "System Updated:       ✓"
+          - "Backups Created:      ✓"
+          - "Security Hardened:    ✓"
+          - "Compliance Checked:   ✓"
+          - "Cleanup Performed:    ✓"
+          - ""
+          - "Disk Space: {{ final_disk_space.stdout }}"
+          - ""
+          - "Review compliance reports at:"
+          - "  - Pre-check:  ~/compliance-reports/weekly/"
+          - "  - Post-check: ~/compliance-reports/weekly-final/"
+          - "  - Backups:    ~/backups/"
+          - ""
+          - "Next maintenance: {{ '%Y-%m-%d' | strftime((ansible_date_time.epoch | int) + 604800) }}"
+          - "============================================="
+      tags: [always]

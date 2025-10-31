@@ -1,0 +1,24 @@
+---
+# Archive specified directories
+
+- name: Check if backup directories exist
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: backup_dir_stats
+  loop: "{{ backup_directories }}"
+  become: false
+
+- name: Archive existing directories
+  ansible.builtin.archive:
+    path: "{{ item.item }}"
+    dest: "{{ backup_destination }}/{{ backup_timestamp }}/{{ item.item | basename }}.tar.gz"
+    format: gz
+    remove: false
+  loop: "{{ backup_dir_stats.results }}"
+  when:
+    - item.stat.exists
+    - item.stat.isdir or item.stat.isreg
+  loop_control:
+    label: "{{ item.item }}"
+  become: false
+  failed_when: false

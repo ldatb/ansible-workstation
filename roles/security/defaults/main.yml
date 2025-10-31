@@ -1,0 +1,51 @@
+---
+# Default variables for security role
+
+# Firewall settings
+enable_firewall: true
+enable_stealth_mode: true
+enable_firewall_logging: false
+
+# SSH settings
+harden_ssh: true
+keep_ssh_enabled: true
+disable_remote_login: false
+
+# File permissions
+harden_home_permissions: true
+
+# macOS-specific
+disable_remote_apple_events: true
+disable_guest_account: true
+require_password_after_screensaver: true
+check_filevault_status: true
+enable_automatic_updates_check: true
+enable_automatic_updates_download: false
+warn_bluetooth: false
+
+# Linux-specific
+enable_automatic_security_updates: true
+enable_auditd: false
+
+# Security tools installation
+install_security_tools: true
+
+macos_security_tools:
+  - lynis
+  - clamav
+  - gnupg
+
+debian_security_tools:
+  - fail2ban
+  - aide
+  - rkhunter
+  - lynis
+  - clamav
+  - clamav-daemon
+
+redhat_security_tools:
+  - fail2ban
+  - aide
+  - rkhunter
+  - clamav
+  - clamav-update

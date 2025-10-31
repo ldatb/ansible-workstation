@@ -1,0 +1,77 @@
+---
+# macOS-specific compliance checks
+
+- name: Check macOS firewall status
+  ansible.builtin.command: /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate
+  register: macos_firewall_status
+  changed_when: false
+
+- name: Check stealth mode status
+  ansible.builtin.command: /usr/libexec/ApplicationFirewall/socketfilterfw --getstealthmode
+  register: stealth_mode_status
+  changed_when: false
+
+- name: Check FileVault status
+  ansible.builtin.command: fdesetup status
+  register: filevault_status
+  changed_when: false
+  failed_when: false
+  become: true
+
+- name: Check Gatekeeper status
+  ansible.builtin.command: spctl --status
+  register: gatekeeper_status
+  changed_when: false
+
+- name: Check System Integrity Protection (SIP)
+  ansible.builtin.command: csrutil status
+  register: sip_status
+  changed_when: false
+
+- name: List Homebrew packages
+  ansible.builtin.shell: |
+    set -o pipefail
+    brew list --formula | wc -l
+  args:
+    executable: /bin/bash
+  register: homebrew_formula_count
+  changed_when: false
+  become: false
+
+- name: List Homebrew casks
+  ansible.builtin.shell: |
+    set -o pipefail
+    brew list --cask | wc -l
+  args:
+    executable: /bin/bash
+  register: homebrew_cask_count
+  changed_when: false
+  become: false
+
+- name: Check for outdated Homebrew packages
+  ansible.builtin.shell: |
+    set -o pipefail
+    brew outdated | wc -l
+  args:
+    executable: /bin/bash
+  register: outdated_packages
+  changed_when: false
+  become: false
+
+- name: Check screensaver password requirement
+  community.general.osx_defaults:
+    domain: com.apple.screensaver
+    key: askForPassword
+  register: screensaver_password
+  changed_when: false
+  become: false
+  failed_when: false
+
+- name: Check automatic update settings
+  community.general.osx_defaults:
+    domain: /Library/Preferences/com.apple.SoftwareUpdate
+    key: AutomaticCheckEnabled
+  register: auto_update_check
+  changed_when: false
+  become: false
+  failed_when: false

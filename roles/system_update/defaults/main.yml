@@ -1,0 +1,17 @@
+---
+# Default variables for system_update role
+
+# Homebrew settings (macOS)
+update_homebrew_formulae: true
+update_homebrew_casks: true
+update_homebrew_cleanup: true
+check_macos_updates: false
+
+# APT settings (Debian/Ubuntu)
+apt_upgrade_type: dist  # Options: dist, full, safe
+apt_autoremove: true
+apt_autoclean: true
+check_security_updates: true
+
+# YUM/DNF settings (RedHat/CentOS)
+yum_autoremove: true

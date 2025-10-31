@@ -1,0 +1,9 @@
+---
+# Handlers for security role
+
+- name: Restart SSH
+  ansible.builtin.systemd:
+    name: "{{ 'ssh' if ansible_os_family == 'Debian' else 'sshd' }}"
+    state: restarted
+  become: true
+  when: ansible_os_family in ["Debian", "RedHat"]

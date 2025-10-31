@@ -1,0 +1,21 @@
+---
+# Common tasks for all roles
+
+- name: Gather facts if not already gathered
+  ansible.builtin.setup:
+  when: ansible_os_family is not defined
+
+- name: Set common facts
+  ansible.builtin.set_fact:
+    is_darwin: "{{ ansible_os_family == 'Darwin' }}"
+    is_debian: "{{ ansible_os_family == 'Debian' }}"
+    is_redhat: "{{ ansible_os_family == 'RedHat' }}"
+
+- name: Display system information
+  ansible.builtin.debug:
+    msg:
+      - "Hostname: {{ ansible_hostname }}"
+      - "OS Family: {{ ansible_os_family }}"
+      - "Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+      - "Architecture: {{ ansible_architecture }}"
+  when: common_verbose | default(false)

@@ -1,0 +1,14 @@
+---
+# Backup only
+# Usage: ansible-playbook playbooks/backup.yml
+
+- name: Backup important files and configurations
+  hosts: workstation
+  gather_facts: true
+
+  roles:
+    - role: common
+      tags: [always]
+
+    - role: backup
+      tags: [backup]

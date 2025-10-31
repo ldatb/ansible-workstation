@@ -1,0 +1,221 @@
+===============================================================================
+SYSTEM COMPLIANCE REPORT
+===============================================================================
+
+Report Generated: {{ ansible_date_time.date }} {{ ansible_date_time.time }}
+Timestamp: {{ compliance_timestamp }}
+
+===============================================================================
+SYSTEM INFORMATION
+===============================================================================
+Hostname:        {{ ansible_hostname }}
+FQDN:            {{ ansible_fqdn }}
+OS Family:       {{ ansible_os_family }}
+Distribution:    {{ ansible_distribution }} {{ ansible_distribution_version }}
+Kernel:          {{ ansible_kernel }}
+Architecture:    {{ ansible_architecture }}
+User:            {{ ansible_user_id }}
+Python Version:  {{ ansible_python_version }}
+
+===============================================================================
+SECURITY CONFIGURATION
+===============================================================================
+
+{% if ansible_os_family == "Darwin" %}
+## macOS Security Settings
+
+Firewall Status:           {{ macos_firewall_status.stdout | default('Unknown') }}
+Stealth Mode:              {{ stealth_mode_status.stdout | default('Unknown') }}
+FileVault (Encryption):    {{ filevault_status.stdout | default('Unknown') }}
+Gatekeeper:                {{ gatekeeper_status.stdout | default('Unknown') }}
+System Integrity Protection: {{ sip_status.stdout | default('Unknown') }}
+Screensaver Password:      {{ 'Enabled' if screensaver_password.value | default(0) == 1 else 'Disabled' }}
+Auto Update Check:         {{ 'Enabled' if auto_update_check.value | default(false) else 'Disabled' }}
+
+{% elif ansible_os_family == "Debian" %}
+## Debian/Ubuntu Security Settings
+
+Firewall Status:
+{{ ufw_status.stdout | indent(2) }}
+
+SSH Configuration:
+{{ ssh_config.stdout | indent(2) }}
+
+Password Policy:
+{{ password_policy.stdout | indent(2) }}
+
+Unattended Upgrades:       {{ 'Active' if unattended_upgrades_status.status.ActiveState | default('inactive') == 'active' else 'Inactive' }}
+
+{% elif ansible_os_family == "RedHat" %}
+## RedHat/CentOS Security Settings
+
+Firewall Status:           {{ firewalld_status.stdout | default('Unknown') }}
+SELinux Status:            {{ selinux_status.stdout | default('Unknown') }}
+
+SSH Configuration:
+{{ ssh_config.stdout | indent(2) }}
+
+Password Policy:
+{{ password_policy.stdout | indent(2) }}
+
+{% endif %}
+
+===============================================================================
+FILE SYSTEM CHECKS
+===============================================================================
+
+World-Writable Files (first 20):
+{% if world_writable_files.stdout == "None" or world_writable_files.stdout | length == 0 %}
+  No world-writable files found
+{% else %}
+{{ world_writable_files.stdout | indent(2) }}
+{% endif %}
+
+Files with No Owner (first 20):
+{% if no_owner_files.stdout == "None" or no_owner_files.stdout | length == 0 %}
+  No orphaned files found
+{% else %}
+{{ no_owner_files.stdout | indent(2) }}
+{% endif %}
+
+===============================================================================
+PACKAGE MANAGEMENT
+===============================================================================
+
+{% if ansible_os_family == "Darwin" %}
+Homebrew Formulae:         {{ homebrew_formula_count.stdout | default('0') }}
+Homebrew Casks:            {{ homebrew_cask_count.stdout | default('0') }}
+Outdated Packages:         {{ outdated_packages.stdout | default('0') }}
+
+{% elif ansible_os_family == "Debian" %}
+Total Packages:            {{ package_count.stdout | default('0') }}
+Security Updates Available: {{ security_updates.stdout | default('0') }}
+
+{% elif ansible_os_family == "RedHat" %}
+Total Packages:            {{ package_count.stdout | default('0') }}
+Security Updates Available: {{ security_updates.stdout | default('0') }}
+
+{% endif %}
+
+===============================================================================
+USER ACCOUNTS
+===============================================================================
+
+{% if ansible_os_family in ["Debian", "RedHat"] %}
+Users with UID 0 (root privileges):
+{{ uid_zero_users.stdout | indent(2) }}
+
+Users with Login Shells:
+{{ login_users.stdout | indent(2) }}
+{% else %}
+User audit not fully applicable for {{ ansible_os_family }}
+{% endif %}
+
+===============================================================================
+SYSTEM RESOURCES
+===============================================================================
+
+Disk Usage (root):         {{ disk_usage.stdout }}%
+{% if disk_usage.stdout | int > 90 %}
+⚠️  WARNING: Disk usage is critically high (>90%)
+{% elif disk_usage.stdout | int > 80 %}
+⚠️  CAUTION: Disk usage is high (>80%)
+{% endif %}
+
+Running Processes:         {{ process_count.stdout | default('Unknown') }}
+{% if ansible_os_family in ["Debian", "RedHat"] %}
+Running Services:          {{ running_services.stdout | default('Unknown') }}
+{% endif %}
+
+===============================================================================
+COMPLIANCE ISSUES
+===============================================================================
+
+{% set issues = [] %}
+
+{# Firewall checks #}
+{% if ansible_os_family == "Darwin" %}
+  {% if 'disabled' in macos_firewall_status.stdout | lower or 'off' in macos_firewall_status.stdout | lower %}
+    {% set _ = issues.append('❌ Firewall is disabled') %}
+  {% endif %}
+  {% if 'disabled' in stealth_mode_status.stdout | lower or 'off' in stealth_mode_status.stdout | lower %}
+    {% set _ = issues.append('⚠️  Stealth mode is disabled') %}
+  {% endif %}
+  {% if 'off' in filevault_status.stdout | lower %}
+    {% set _ = issues.append('❌ FileVault encryption is off') %}
+  {% endif %}
+  {% if screensaver_password.value | default(0) != 1 %}
+    {% set _ = issues.append('⚠️  Screensaver password not required') %}
+  {% endif %}
+{% elif ansible_os_family == "Debian" %}
+  {% if 'inactive' in ufw_status.stdout | lower %}
+    {% set _ = issues.append('❌ UFW firewall is inactive') %}
+  {% endif %}
+  {% if 'yes' in ssh_config.stdout and 'PermitRootLogin yes' in ssh_config.stdout %}
+    {% set _ = issues.append('❌ SSH root login is enabled') %}
+  {% endif %}
+  {% if 'yes' in ssh_config.stdout and 'PasswordAuthentication yes' in ssh_config.stdout %}
+    {% set _ = issues.append('⚠️  SSH password authentication is enabled') %}
+  {% endif %}
+  {% if security_updates.stdout | int > 0 %}
+    {% set _ = issues.append('⚠️  ' + security_updates.stdout + ' security update(s) available') %}
+  {% endif %}
+{% elif ansible_os_family == "RedHat" %}
+  {% if firewalld_status.rc != 0 or 'not running' in firewalld_status.stdout | lower %}
+    {% set _ = issues.append('❌ Firewalld is not running') %}
+  {% endif %}
+  {% if selinux_status.stdout | default('') not in ['Enforcing', 'Permissive'] %}
+    {% set _ = issues.append('⚠️  SELinux status: ' + selinux_status.stdout | default('Unknown')) %}
+  {% endif %}
+{% endif %}
+
+{# Common checks #}
+{% if world_writable_files.stdout != "None" and world_writable_files.stdout | length > 0 %}
+  {% set _ = issues.append('⚠️  World-writable files detected') %}
+{% endif %}
+
+{% if no_owner_files.stdout != "None" and no_owner_files.stdout | length > 0 %}
+  {% set _ = issues.append('⚠️  Files with no owner detected') %}
+{% endif %}
+
+{% if disk_usage.stdout | int > 90 %}
+  {% set _ = issues.append('❌ Critical disk usage: ' + disk_usage.stdout + '%') %}
+{% elif disk_usage.stdout | int > 80 %}
+  {% set _ = issues.append('⚠️  High disk usage: ' + disk_usage.stdout + '%') %}
+{% endif %}
+
+{% if ansible_os_family in ["Debian", "RedHat"] and uid_zero_users.stdout | length > 0 %}
+  {% set uid_zero_count = uid_zero_users.stdout_lines | length %}
+  {% if uid_zero_count > 1 %}
+    {% set _ = issues.append('⚠️  Multiple users with UID 0 detected (' + (uid_zero_count | string) + ')') %}
+  {% endif %}
+{% endif %}
+
+{% if issues | length == 0 %}
+✅ Status: COMPLIANT - No critical issues detected
+
+All checks passed successfully. System meets basic security and compliance standards.
+{% else %}
+⚠️  Status: ATTENTION REQUIRED - {{ issues | length }} issue(s) found
+
+Issues Detected:
+{% for issue in issues %}
+  {{ loop.index }}. {{ issue }}
+{% endfor %}
+
+Recommendations:
+  - Review and address each issue listed above
+  - Run Lynis for detailed security audit (set run_lynis_audit: true)
+  - Check system logs for suspicious activity
+  - Ensure all security updates are applied
+  - Review user accounts and permissions regularly
+{% endif %}
+
+===============================================================================
+REPORT END
+===============================================================================
+
+For detailed security analysis, run: lynis audit system
+Report location: {{ compliance_report_path }}/compliance_{{ compliance_timestamp }}.txt
+
+Generated by Ansible Workstation Management

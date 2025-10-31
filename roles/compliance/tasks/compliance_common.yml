@@ -1,0 +1,47 @@
+---
+# Common compliance checks
+
+- name: Check world-writable files in home directory
+  ansible.builtin.shell: |
+    set -o pipefail
+    find {{ ansible_env.HOME }} -type f -perm -002 -ls 2>/dev/null | head -20 || echo "None"
+  args:
+    executable: /bin/bash
+  register: world_writable_files
+  changed_when: false
+  become: false
+
+- name: Check for files with no owner
+  ansible.builtin.shell: |
+    set -o pipefail
+    find {{ ansible_env.HOME }} -nouser -o -nogroup 2>/dev/null | head -20 || echo "None"
+  args:
+    executable: /bin/bash
+  register: no_owner_files
+  changed_when: false
+  become: false
+
+- name: Check disk usage
+  ansible.builtin.shell: |
+    set -o pipefail
+    df -h / | tail -1 | awk '{print $5}' | sed 's/%//'
+  args:
+    executable: /bin/bash
+  register: disk_usage
+  changed_when: false
+
+- name: Check for users with UID 0
+  ansible.builtin.shell: |
+    awk -F: '($3 == 0) {print $1}' /etc/passwd
+  register: uid_zero_users
+  changed_when: false
+  when: ansible_os_family in ["Debian", "RedHat"]
+
+- name: Get running processes count
+  ansible.builtin.shell: |
+    set -o pipefail
+    ps aux | wc -l
+  args:
+    executable: /bin/bash
+  register: process_count
+  changed_when: false

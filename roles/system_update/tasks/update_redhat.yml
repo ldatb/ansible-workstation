@@ -1,0 +1,25 @@
+---
+# RedHat/CentOS-specific update tasks
+
+- name: Update all packages (dnf)
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+    update_cache: true
+  become: true
+  when: ansible_distribution_major_version | int >= 8
+
+- name: Update all packages (yum)
+  ansible.builtin.yum:
+    name: "*"
+    state: latest
+    update_cache: true
+  become: true
+  when: ansible_distribution_major_version | int < 8
+
+- name: Autoremove unnecessary packages
+  ansible.builtin.command: "{{ 'dnf' if ansible_distribution_major_version | int >= 8 else 'yum' }} autoremove -y"
+  register: autoremove_result
+  changed_when: "'Nothing to do' not in autoremove_result.stdout"
+  become: true
+  when: yum_autoremove | default(true)

@@ -1,0 +1,20 @@
+---
+# Create single tarball of entire backup
+
+- name: Create consolidated tarball of backup
+  ansible.builtin.archive:
+    path: "{{ backup_destination }}/{{ backup_timestamp }}"
+    dest: "{{ backup_destination }}/backup_{{ backup_timestamp }}.tar.gz"
+    format: gz
+    remove: false
+  become: false
+  when: create_backup_tarball | default(true)
+
+- name: Remove uncompressed backup directory
+  ansible.builtin.file:
+    path: "{{ backup_destination }}/{{ backup_timestamp }}"
+    state: absent
+  become: false
+  when:
+    - create_backup_tarball | default(true)
+    - remove_uncompressed_backup | default(false)

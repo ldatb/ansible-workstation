@@ -1,0 +1,26 @@
+---
+# Run Lynis security audit
+
+- name: Check if Lynis is installed
+  ansible.builtin.command: which lynis
+  register: lynis_installed
+  changed_when: false
+  failed_when: false
+
+- name: Run Lynis security audit
+  ansible.builtin.shell: |
+    lynis audit system --quick --quiet > {{ compliance_report_path }}/lynis_{{ compliance_timestamp }}.txt 2>&1
+  register: lynis_result
+  changed_when: false
+  become: "{{ 'true' if ansible_os_family in ['Debian', 'RedHat'] else 'false' }}"
+  when: lynis_installed.rc == 0
+
+- name: Display Lynis result
+  ansible.builtin.debug:
+    msg: "Lynis audit completed: {{ compliance_report_path }}/lynis_{{ compliance_timestamp }}.txt"
+  when: lynis_installed.rc == 0
+
+- name: Warn if Lynis not installed
+  ansible.builtin.debug:
+    msg: "Lynis not installed. Install it for comprehensive security auditing."
+  when: lynis_installed.rc != 0

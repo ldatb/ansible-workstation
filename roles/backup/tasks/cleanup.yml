@@ -1,0 +1,25 @@
+---
+# Cleanup old backups
+
+- name: Find old backup directories
+  ansible.builtin.find:
+    paths: "{{ backup_destination }}"
+    age: "{{ backup_retention_days }}d"
+    file_type: directory
+  register: old_backups
+  become: false
+
+- name: Remove old backups
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ old_backups.files }}"
+  when: old_backups.files | length > 0
+  loop_control:
+    label: "{{ item.path | basename }}"
+  become: false
+
+- name: Report cleanup results
+  ansible.builtin.debug:
+    msg: "Removed {{ old_backups.files | length }} old backup(s)"
+  when: old_backups.files | length > 0

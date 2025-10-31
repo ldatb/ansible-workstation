@@ -1,0 +1,51 @@
+---
+# Debian/Ubuntu-specific compliance checks
+
+- name: Check UFW firewall status
+  ansible.builtin.command: ufw status
+  register: ufw_status
+  changed_when: false
+  become: true
+
+- name: Check SSH configuration
+  ansible.builtin.shell: |
+    grep -E "^(PermitRootLogin|PasswordAuthentication|PubkeyAuthentication)" /etc/ssh/sshd_config || echo "Not configured"
+  register: ssh_config
+  changed_when: false
+  become: true
+
+- name: Check password policy settings
+  ansible.builtin.shell: |
+    grep -E "^PASS_(MAX|MIN)_(DAYS|LEN)" /etc/login.defs || echo "Not configured"
+  register: password_policy
+  changed_when: false
+
+- name: Count installed packages
+  ansible.builtin.shell: dpkg -l | grep '^ii' | wc -l
+  register: package_count
+  changed_when: false
+
+- name: Check for security updates
+  ansible.builtin.shell: |
+    apt list --upgradable 2>/dev/null | grep -i security | wc -l
+  register: security_updates
+  changed_when: false
+  become: true
+
+- name: Check unattended-upgrades status
+  ansible.builtin.systemd:
+    name: unattended-upgrades
+  register: unattended_upgrades_status
+  failed_when: false
+  become: true
+
+- name: List users with login shells
+  ansible.builtin.shell: |
+    grep -v '/nologin\|/false' /etc/passwd | cut -d: -f1
+  register: login_users
+  changed_when: false
+
+- name: Check running services
+  ansible.builtin.shell: systemctl list-units --type=service --state=running --no-pager | grep -E '\.service' | wc -l
+  register: running_services
+  changed_when: false

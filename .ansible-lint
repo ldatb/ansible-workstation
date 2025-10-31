@@ -1,0 +1,37 @@
+---
+# Ansible-lint configuration
+
+profile: moderate  # Use moderate profile instead of basic
+
+# Exclude paths
+exclude_paths:
+  - .ansible_cache/
+  - .ansible/
+  - inventory/
+
+# Skip specific rules that don't apply to our use case
+skip_list:
+  - var-naming[no-role-prefix]  # Our variable names are clear without prefixes
+  - package-latest  # We explicitly want latest for system updates
+  - fqcn[canonical]  # ansible.builtin is fine, we don't need community.general for archive
+  - args[module]  # False positive for osx_defaults when just reading values
+
+# Enable specific rules
+enable_list:
+  - no-changed-when
+  - no-handler
+  - command-instead-of-module
+
+# Warn only (don't fail) for these
+warn_list:
+  - command-instead-of-shell
+  - risky-file-permissions
+  - experimental
+
+# Mock modules/roles/collections for testing
+mock_modules:
+  - community.general.osx_defaults
+  - community.general.homebrew
+  - community.general.ufw
+
+mock_roles: []

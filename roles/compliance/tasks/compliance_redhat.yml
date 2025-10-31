@@ -1,0 +1,51 @@
+---
+# RedHat/CentOS-specific compliance checks
+
+- name: Check firewalld status
+  ansible.builtin.command: firewall-cmd --state
+  register: firewalld_status
+  changed_when: false
+  failed_when: false
+  become: true
+
+- name: Check SSH configuration
+  ansible.builtin.shell: |
+    grep -E "^(PermitRootLogin|PasswordAuthentication|PubkeyAuthentication)" /etc/ssh/sshd_config || echo "Not configured"
+  register: ssh_config
+  changed_when: false
+  become: true
+
+- name: Check password policy settings
+  ansible.builtin.shell: |
+    grep -E "^PASS_(MAX|MIN)_(DAYS|LEN)" /etc/login.defs || echo "Not configured"
+  register: password_policy
+  changed_when: false
+
+- name: Count installed packages
+  ansible.builtin.shell: rpm -qa | wc -l
+  register: package_count
+  changed_when: false
+
+- name: Check for security updates
+  ansible.builtin.shell: |
+    {{ 'dnf' if ansible_distribution_major_version | int >= 8 else 'yum' }} updateinfo list security 2>/dev/null | wc -l
+  register: security_updates
+  changed_when: false
+  become: true
+
+- name: Check SELinux status
+  ansible.builtin.command: getenforce
+  register: selinux_status
+  changed_when: false
+  failed_when: false
+
+- name: List users with login shells
+  ansible.builtin.shell: |
+    grep -v '/nologin\|/false' /etc/passwd | cut -d: -f1
+  register: login_users
+  changed_when: false
+
+- name: Check running services
+  ansible.builtin.shell: systemctl list-units --type=service --state=running --no-pager | grep -E '\.service' | wc -l
+  register: running_services
+  changed_when: false

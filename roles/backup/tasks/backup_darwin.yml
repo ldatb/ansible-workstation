@@ -1,0 +1,36 @@
+---
+# macOS-specific backup tasks
+
+- name: Export Homebrew bundle
+  ansible.builtin.command: brew bundle dump --file="{{ backup_destination }}/{{ backup_timestamp }}/Brewfile" --force
+  register: brewfile_dump
+  changed_when: true
+  become: false
+  when: backup_homebrew_bundle | default(true)
+
+- name: Backup Homebrew package list (text format)
+  ansible.builtin.shell: |
+    brew list --formula > "{{ backup_destination }}/{{ backup_timestamp }}/brew_formulae.txt"
+    brew list --cask > "{{ backup_destination }}/{{ backup_timestamp }}/brew_casks.txt"
+  register: brew_lists
+  changed_when: true
+  become: false
+  when: backup_homebrew_lists | default(true)
+
+- name: Backup macOS defaults (preferences)
+  ansible.builtin.shell: |
+    defaults read > "{{ backup_destination }}/{{ backup_timestamp }}/macos_defaults.plist"
+  register: defaults_backup
+  changed_when: true
+  failed_when: false
+  become: false
+  when: backup_macos_preferences | default(false)
+
+- name: Backup launchd agents
+  ansible.builtin.copy:
+    src: "{{ ansible_env.HOME }}/Library/LaunchAgents/"
+    dest: "{{ backup_destination }}/{{ backup_timestamp }}/LaunchAgents/"
+    mode: preserve
+  failed_when: false
+  become: false
+  when: backup_launchd_agents | default(true)

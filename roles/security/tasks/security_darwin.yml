@@ -1,0 +1,106 @@
+---
+# macOS-specific security tasks
+
+- name: Enable macOS application firewall
+  ansible.builtin.command: /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
+  register: firewall_enable
+  changed_when: firewall_enable.rc == 0
+  failed_when: false
+  become: true
+  when: enable_firewall | default(true)
+
+- name: Enable stealth mode
+  ansible.builtin.command: /usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
+  register: stealth_enable
+  changed_when: stealth_enable.rc == 0
+  failed_when: false
+  become: true
+  when: enable_stealth_mode | default(true)
+
+- name: Enable firewall logging
+  ansible.builtin.command: /usr/libexec/ApplicationFirewall/socketfilterfw --setloggingmode on
+  register: logging_enable
+  changed_when: logging_enable.rc == 0
+  failed_when: false
+  become: true
+  when: enable_firewall_logging | default(false)
+
+- name: Disable remote Apple events
+  ansible.builtin.command: systemsetup -setremoteappleevents off
+  register: remote_events
+  changed_when: true
+  failed_when: false
+  become: true
+  when: disable_remote_apple_events | default(true)
+
+- name: Disable remote login (SSH server)
+  ansible.builtin.command: systemsetup -setremotelogin off
+  register: remote_login
+  changed_when: true
+  failed_when: false
+  become: true
+  when:
+    - disable_remote_login | default(false)
+    - not keep_ssh_enabled | default(true)
+
+- name: Require password immediately after sleep or screensaver
+  community.general.osx_defaults:
+    domain: com.apple.screensaver
+    key: askForPassword
+    type: int
+    value: 1
+  become: false
+  when: require_password_after_screensaver | default(true)
+
+- name: Set screensaver password delay to 0 seconds
+  community.general.osx_defaults:
+    domain: com.apple.screensaver
+    key: askForPasswordDelay
+    type: int
+    value: 0
+  become: false
+  when: require_password_after_screensaver | default(true)
+
+- name: Enable FileVault (encryption) check
+  ansible.builtin.command: fdesetup status
+  register: filevault_status
+  changed_when: false
+  failed_when: false
+  become: true
+  when: check_filevault_status | default(true)
+
+- name: Display FileVault status
+  ansible.builtin.debug:
+    msg: "{{ filevault_status.stdout }}"
+  when:
+    - check_filevault_status | default(true)
+    - filevault_status.stdout is defined
+
+- name: Disable guest account
+  ansible.builtin.command: sysadminctl -guestAccount off
+  register: guest_account
+  changed_when: true
+  failed_when: false
+  become: true
+  when: disable_guest_account | default(true)
+
+- name: Enable automatic system updates check
+  ansible.builtin.command: defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true
+  register: auto_check_result
+  changed_when: auto_check_result.rc == 0
+  failed_when: false
+  become: true
+  when: enable_automatic_updates_check | default(true)
+
+- name: Enable automatic download of updates
+  ansible.builtin.command: defaults write /Library/Preferences/com.apple.SoftwareUpdate AutomaticDownload -bool true
+  register: auto_download_result
+  changed_when: auto_download_result.rc == 0
+  failed_when: false
+  become: true
+  when: enable_automatic_updates_download | default(true)
+
+- name: Disable Bluetooth when not in use
+  ansible.builtin.debug:
+    msg: "Manual action required: Consider disabling Bluetooth in System Settings when not in use"
+  when: warn_bluetooth | default(false)

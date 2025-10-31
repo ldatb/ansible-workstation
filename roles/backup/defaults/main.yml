@@ -1,0 +1,33 @@
+---
+# Default variables for backup role
+
+backup_destination: "{{ ansible_env.HOME }}/backups"
+backup_timestamp: "{{ ansible_date_time.iso8601_basic_short }}"
+backup_retention_days: 30
+
+# Tarball options
+create_backup_tarball: true
+remove_uncompressed_backup: false
+
+# Directories to backup
+backup_directories:
+  - "{{ ansible_env.HOME }}/Documents"
+  - "{{ ansible_env.HOME }}/Desktop"
+  - "{{ ansible_env.HOME }}/.ssh"
+  - "{{ ansible_env.HOME }}/.gnupg"
+  - "{{ ansible_env.HOME }}/.config"
+
+# Individual files to backup
+backup_files:
+  - "{{ ansible_env.HOME }}/.zshrc"
+  - "{{ ansible_env.HOME }}/.bashrc"
+  - "{{ ansible_env.HOME }}/.bash_profile"
+  - "{{ ansible_env.HOME }}/.gitconfig"
+  - "{{ ansible_env.HOME }}/.vimrc"
+  - "{{ ansible_env.HOME }}/.tmux.conf"
+
+# macOS-specific options
+backup_homebrew_bundle: true
+backup_homebrew_lists: true
+backup_macos_preferences: false
+backup_launchd_agents: true

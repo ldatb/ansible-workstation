@@ -1,0 +1,62 @@
+---
+# Common security tasks across all platforms
+
+- name: Set secure permissions on home directory
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}"
+    mode: '0750'
+  become: false
+  when: harden_home_permissions | default(true)
+
+- name: Ensure .ssh directory exists with secure permissions
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.ssh"
+    state: directory
+    mode: '0700'
+  become: false
+
+- name: Find SSH private keys
+  ansible.builtin.find:
+    paths: "{{ ansible_env.HOME }}/.ssh"
+    patterns:
+      - 'id_*'
+      - '*_rsa'
+      - '*_ed25519'
+      - '*_ecdsa'
+    excludes: '*.pub'
+  register: ssh_private_keys
+  become: false
+
+- name: Secure SSH private keys
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    mode: '0600'
+  loop: "{{ ssh_private_keys.files }}"
+  when: ssh_private_keys.files | length > 0
+  loop_control:
+    label: "{{ item.path | basename }}"
+  become: false
+
+- name: Secure SSH public keys
+  ansible.builtin.file:
+    path: "{{ item }}"
+    mode: '0644'
+  with_fileglob:
+    - "{{ ansible_env.HOME }}/.ssh/*.pub"
+  become: false
+  failed_when: false
+
+- name: Check if .gnupg directory exists
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.gnupg"
+  register: gnupg_dir
+  become: false
+
+- name: Ensure .gnupg directory has secure permissions
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.gnupg"
+    state: directory
+    mode: '0700'
+  become: false
+  when: gnupg_dir.stat.exists
+  failed_when: false

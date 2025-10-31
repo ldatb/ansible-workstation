@@ -1,0 +1,15 @@
+---
+# RedHat/CentOS-specific backup tasks
+
+- name: Export RPM package list
+  ansible.builtin.shell: rpm -qa > "{{ backup_destination }}/{{ backup_timestamp }}/rpm_packages.txt"
+  register: rpm_backup
+  changed_when: true
+
+- name: Backup YUM/DNF repositories
+  ansible.builtin.shell: |
+    tar -czf "{{ backup_destination }}/{{ backup_timestamp }}/yum_repos.tar.gz" /etc/yum.repos.d/
+  register: repo_backup
+  changed_when: true
+  failed_when: false
+  become: true
