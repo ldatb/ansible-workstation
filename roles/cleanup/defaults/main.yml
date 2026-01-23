@@ -1,0 +1,11 @@
+---
+# Cleanup role defaults
+
+# Clear ~/Library/Caches
+cleanup_user_cache: true
+
+# Clear /var/log files (requires sudo)
+cleanup_system_logs: true
+
+# Empty user trash (~/.Trash)
+cleanup_trash: true

@@ -1,0 +1,70 @@
+---
+# macOS-specific cleanup tasks
+
+- name: Clear user cache
+  block:
+    - name: Find user cache directories
+      ansible.builtin.find:
+        paths: "{{ ansible_env.HOME }}/Library/Caches"
+        file_type: directory
+        recurse: false
+      register: user_cache_dirs
+
+    - name: Remove user cache directories
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ user_cache_dirs.files }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+      failed_when: false
+
+    - name: Report user cache cleanup
+      ansible.builtin.debug:
+        msg: "Cleared {{ user_cache_dirs.files | length }} user cache directories"
+  become: false
+  when: cleanup_user_cache | default(true)
+
+- name: Clear system logs
+  block:
+    - name: Find system log files
+      ansible.builtin.find:
+        paths: /var/log
+        file_type: file
+        recurse: false
+      register: system_log_files
+
+    - name: Remove system log files
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ system_log_files.files }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+      failed_when: false
+
+    - name: Report system log cleanup
+      ansible.builtin.debug:
+        msg: "Cleared {{ system_log_files.files | length }} system log files"
+  become: true
+  when: cleanup_system_logs | default(true)
+
+- name: Empty trash
+  block:
+    - name: Remove user trash contents
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.Trash"
+        state: absent
+      failed_when: false
+
+    - name: Recreate trash directory
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.Trash"
+        state: directory
+        mode: '0700'
+
+    - name: Report trash cleanup
+      ansible.builtin.debug:
+        msg: "User trash has been emptied"
+  become: false
+  when: cleanup_trash | default(true)

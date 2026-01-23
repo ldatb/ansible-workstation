@@ -1,0 +1,26 @@
+---
+# System cleanup playbook
+# Usage: ansible-playbook playbooks/cleanup.yml
+
+- name: System cleanup
+  hosts: workstation
+  gather_facts: true
+
+  roles:
+    - role: common
+      tags: [always]
+
+    - role: cleanup
+      tags: [cleanup, maintenance]
+
+  post_tasks:
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg:
+          - "================================"
+          - "System cleanup completed"
+          - "================================"
+          - "- User cache cleared"
+          - "- System logs cleared"
+          - "- Trash emptied"
+      tags: [always]

@@ -1,0 +1,9 @@
+---
+# System cleanup tasks
+
+- name: Include OS-specific cleanup tasks
+  ansible.builtin.include_tasks: "{{ item }}"
+  with_first_found:
+    - files:
+        - "cleanup_{{ ansible_os_family | lower }}.yml"
+      skip: true

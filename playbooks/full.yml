@@ -22,6 +22,9 @@
     - role: compliance
       tags: [compliance, audit]
 
+    - role: cleanup
+      tags: [cleanup, maintenance]
+
   post_tasks:
     - name: Display completion message
       ansible.builtin.debug:
@@ -29,6 +32,6 @@
           - "============================================="
           - "Workstation management completed successfully"
           - "============================================="
-          - "Roles executed: common, system_update, backup, security, compliance"
+          - "Roles executed: common, system_update, backup, security, compliance, cleanup"
           - "Review logs at: ./ansible.log"
       tags: [always]
