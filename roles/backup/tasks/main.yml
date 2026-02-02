@@ -1,6 +1,24 @@
 ---
 # Backup tasks
 
+- name: Check if external backup drive is available
+  ansible.builtin.stat:
+    path: "{{ backup_external_destination }}"
+  register: external_drive
+  when: backup_prefer_external | default(true)
+  become: false
+
+- name: Use external drive for backup destination
+  ansible.builtin.set_fact:
+    backup_destination: "{{ backup_external_destination }}"
+    create_backup_tarball: true
+    remove_uncompressed_backup: true
+  when:
+    - backup_prefer_external | default(true)
+    - external_drive.stat is defined
+    - external_drive.stat.exists
+    - external_drive.stat.isdir
+
 - name: Create backup destination directory
   ansible.builtin.file:
     path: "{{ backup_destination }}/{{ backup_timestamp }}"

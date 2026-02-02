@@ -11,9 +11,9 @@
   when: create_backup_tarball | default(true)
 
 - name: Remove uncompressed backup directory
-  ansible.builtin.file:
-    path: "{{ backup_destination }}/{{ backup_timestamp }}"
-    state: absent
+  ansible.builtin.command:
+    cmd: rm -rf "{{ backup_destination }}/{{ backup_timestamp }}"
+    removes: "{{ backup_destination }}/{{ backup_timestamp }}"
   become: false
   when:
     - create_backup_tarball | default(true)

@@ -2,6 +2,8 @@
 # Default variables for backup role
 
 backup_destination: "{{ ansible_env.HOME }}/backups"
+backup_external_destination: "/Volumes/T9/Backups"
+backup_prefer_external: true
 backup_timestamp: "{{ ansible_date_time.iso8601_basic_short }}"
 backup_retention_days: 30
 
