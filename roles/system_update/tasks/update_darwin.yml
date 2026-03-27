@@ -2,13 +2,15 @@
 # macOS-specific update tasks
 
 - name: Update Homebrew
-  community.general.homebrew:
-    update_homebrew: true
+  ansible.builtin.command: brew update
+  register: brew_update
+  changed_when: "'Already up-to-date' not in brew_update.stderr"
   become: false
 
 - name: Upgrade all Homebrew formulae
-  community.general.homebrew:
-    upgrade_all: true
+  ansible.builtin.command: brew upgrade
+  register: brew_upgrade
+  changed_when: brew_upgrade.stdout | length > 0
   become: false
   when: update_homebrew_formulae | default(true)
 
@@ -19,12 +21,6 @@
   failed_when: false
   become: false
   when: update_homebrew_casks | default(true)
-
-- name: Cleanup Homebrew
-  community.general.homebrew:
-    upgrade_all: false
-  become: false
-  when: update_homebrew_cleanup | default(true)
 
 - name: Run brew cleanup
   ansible.builtin.command: brew cleanup -s

@@ -2,9 +2,10 @@
 # Install security tools
 
 - name: Install security tools (macOS)
-  community.general.homebrew:
-    name: "{{ macos_security_tools }}"
-    state: present
+  ansible.builtin.command: brew install {{ macos_security_tools | join(' ') }}
+  register: brew_install_security
+  changed_when: "'already installed' not in brew_install_security.stderr"
+  failed_when: brew_install_security.rc != 0 and 'already installed' not in brew_install_security.stderr
   become: false
   when: ansible_os_family == "Darwin"
 
