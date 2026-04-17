@@ -8,7 +8,7 @@
   become: false
 
 - name: Upgrade all Homebrew formulae
-  ansible.builtin.command: brew upgrade
+  ansible.builtin.command: brew upgrade --formula
   register: brew_upgrade
   changed_when: brew_upgrade.stdout | length > 0
   become: false
